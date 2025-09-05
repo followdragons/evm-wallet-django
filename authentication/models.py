@@ -7,22 +7,53 @@ logger = logging.getLogger(__name__)
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, telegram_id, username_tg=None, referred_by_id=None, **extra_fields):
+    def create_user(self, telegram_id, username_tg=None, first_name=None, last_name=None, 
+                   referred_by_id=None, **extra_fields):
         """
         Create and return a regular user with the given telegram_id and username_tg.
         """
         if not telegram_id:
             raise ValueError('The Telegram ID must be set')
         
-        user = self.model(
+        # Handle referred_by
+        referred_by = None
+        if referred_by_id:
+            try:
+                referred_by = self.get(id=int(referred_by_id))
+            except self.model.DoesNotExist:
+                referred_by = None
+        
+        # Check username uniqueness
+        if username_tg:
+            username_tg = username_tg.lower()
+            existing_user = self.filter(username_tg=username_tg).exclude(telegram_id=telegram_id).first()
+            if existing_user:
+                existing_user.username_tg = None
+                existing_user.save()
+        
+        user, created = self.get_or_create(
             telegram_id=telegram_id,
-            username_tg=username_tg,
-            referred_by_id=referred_by_id,
-            **extra_fields
+            defaults={
+                'username_tg': username_tg,
+                'first_name': first_name,
+                'last_name': last_name,
+                'referred_by': referred_by,
+                **extra_fields
+            }
         )
+        
+        if not created:
+            # Update existing user
+            if user.username_tg != username_tg:
+                user.username_tg = username_tg
+            if user.first_name != first_name:
+                user.first_name = first_name
+            if user.last_name != last_name:
+                user.last_name = last_name
+            user.save()
+        
         user.set_unusable_password()
-        user.save(using=self._db)
-        return user
+        return user, created, referred_by.telegram_id if referred_by else None
 
     def create_superuser(self, telegram_id, username_tg=None, password=None, **extra_fields):
         """
@@ -32,13 +63,33 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('full_permissions_api', True)
         extra_fields.setdefault('has_beta_access', True)
+        extra_fields.setdefault('has_alpha_access', True)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
 
-        return self.create_user(telegram_id, username_tg, **extra_fields)
+        user, created, _ = self.create_user(telegram_id, username_tg, **extra_fields)
+        return user
+
+    def add_ethereum_address(self, user, address):
+        """Add Ethereum address to user"""
+        existing_user = self.filter(ethereum_address=address).exclude(id=user.id).first()
+        if existing_user:
+            return False  # Address already belongs to another user
+        user.ethereum_address = address
+        user.save()
+        return True
+
+    def add_base_address(self, user, address):
+        """Add Base address to user"""
+        existing_user = self.filter(base_address=address).exclude(id=user.id).first()
+        if existing_user:
+            return False  # Address already belongs to another user
+        user.base_address = address
+        user.save()
+        return True
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -100,6 +151,31 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.base_address:
             addresses['base'] = self.base_address
         return addresses
+
+    def get_jwt_token(self):
+        """Generate JWT tokens for the user"""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+
+    def add_ethereum_address(self, address):
+        """Add Ethereum address to user"""
+        if self.ethereum_address:
+            return False  # Address already exists
+        self.ethereum_address = address
+        self.save()
+        return True
+
+    def add_base_address(self, address):
+        """Add Base address to user"""
+        if self.base_address:
+            return False  # Address already exists
+        self.base_address = address
+        self.save()
+        return True
 
 
 class UserProfile(models.Model):
