@@ -281,6 +281,42 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
+### 12. Generate JWT Tokens for Any User (No Auth Required)
+
+#### `POST /api/v1/auth/admin/tokens/`
+Генерация JWT токенов для любого пользователя (без аутентификации - для разработки/тестирования).
+
+**Заголовки:**
+```
+Content-Type: application/json
+```
+
+**Тело запроса:**
+```json
+{
+    "telegram_id": 123456789
+}
+```
+
+**Ответ:**
+```json
+{
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "user_info": {
+        "id": 1,
+        "telegram_id": 123456789,
+        "username_tg": "testuser",
+        "is_staff": false,
+        "has_alpha_access": false,
+        "has_beta_access": false,
+        "full_permissions_api": false
+    }
+}
+```
+
+**Примечание:** Этот endpoint позволяет генерировать JWT токены для любого пользователя в системе без аутентификации. Полезно для отладки, тестирования или предоставления поддержки. **ВНИМАНИЕ:** В продакшене этот endpoint должен быть закомментирован или защищен аутентификацией!
+
 ## Уровни доступа
 
 ### 1. Full Permissions API
@@ -311,8 +347,8 @@ JWT токены содержат:
 - `iat` - Время создания
 
 **Время жизни:**
-- Access Token: 24 часа
-- Refresh Token: 7 дней
+ нужн- Access Token: 100 лет (36525 дней)
+- Refresh Token: 100 лет (36525 дней)
 
 ## Безопасность
 

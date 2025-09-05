@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/users/', views.AdminUserListView.as_view(), name='admin_users'),
     path('admin/users/<int:user_id>/', views.AdminUserDetailView.as_view(), name='admin_user_detail'),
     path('admin/new-users/', views.GetNewUsersAPIView.as_view(), name='get_new_users'),
+    path('admin/tokens/', views.CustomTokenObtainPairView.as_view(), name='admin_token_obtain'),
 ]

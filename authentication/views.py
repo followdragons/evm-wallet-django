@@ -601,3 +601,50 @@ class GetNewUsersAPIView(APIView):
         except Exception as e:
             logger.error(f"Error retrieving new users from cache: {str(e)}")
             return JsonResponse({'result': 'error', 'error_message': 'Internal server error'}, status=500)
+
+
+class CustomTokenObtainPairView(APIView):
+    """
+    Custom JWT token generation for any user by telegram_id.
+    No authentication required - for development/testing purposes.
+    """
+    authentication_classes = []  # No authentication required
+    permission_classes = []      # No permissions required
+
+    def post(self, request, *args, **kwargs):
+        """
+        Generate JWT tokens for a user by telegram_id.
+        No authentication required - for development/testing purposes.
+        """
+        telegram_id = request.data.get('telegram_id')
+
+        if not telegram_id:
+            logger.error("CustomTokenObtainPairView - Missing telegram_id in request data")
+            return Response({'error': 'Missing telegram_id in request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(telegram_id=telegram_id)
+        except User.DoesNotExist:
+            logger.error("CustomTokenObtainPairView - User not found")
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Generate JWT tokens using the user's method
+        jwt_tokens = user.get_jwt_token()
+
+        # Add user info to response
+        response_data = {
+            'access': jwt_tokens['access'],
+            'refresh': jwt_tokens['refresh'],
+            'user_info': {
+                'id': user.id,
+                'telegram_id': user.telegram_id,
+                'username_tg': user.username_tg,
+                'is_staff': user.is_staff,
+                'has_alpha_access': user.has_alpha_access,
+                'has_beta_access': user.has_beta_access,
+                'full_permissions_api': user.full_permissions_api,
+            }
+        }
+
+        logger.info(f"CustomTokenObtainPairView - JWT tokens generated successfully for user {telegram_id}")
+        return Response(response_data, status=status.HTTP_200_OK)
