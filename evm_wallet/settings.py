@@ -26,7 +26,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-y&vs&tc=lybrwn%h!wxy+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,evm.p2e.tg').split(',')
 
 
 # Application definition
@@ -184,9 +184,38 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://web.telegram.org",
+    "https://evm.p2e.tg",
+    "http://evm.p2e.tg",
 ]
 
+# Allow CORS from environment variable
+CORS_ALLOWED_ORIGINS_ENV = config('CORS_ALLOWED_ORIGINS', default='')
+if CORS_ALLOWED_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS.extend(CORS_ALLOWED_ORIGINS_ENV.split(','))
+
 CORS_ALLOW_CREDENTIALS = True
+
+# Additional CORS settings for production
+CORS_ALLOW_ALL_ORIGINS = False  # Keep this False for security
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOWED_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Telegram Bot Configuration
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
