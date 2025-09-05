@@ -1,0 +1,44 @@
+# Инструкции по переименованию файлов
+
+## Переименуйте следующие файлы:
+
+1. **gitignore.txt** → **.gitignore**
+   - Это файл для исключения файлов из Git репозитория
+
+2. **env.txt** → **.env**
+   - Это файл с переменными окружения (НЕ коммитьте в Git!)
+
+3. **env.example.txt** → **.env.example**
+   - Это пример файла с переменными окружения (можно коммитить)
+
+4. **README.txt** → **README.md**
+   - Это документация проекта в формате Markdown
+
+## Как переименовать в Windows:
+
+### Через проводник:
+1. Откройте папку проекта
+2. Щелкните правой кнопкой на файле
+3. Выберите "Переименовать"
+4. Введите новое имя с точкой в начале
+
+### Через командную строку:
+```cmd
+ren gitignore.txt .gitignore
+ren env.txt .env
+ren env.example.txt .env.example
+ren README.txt README.md
+```
+
+### Через PowerShell:
+```powershell
+Rename-Item gitignore.txt .gitignore
+Rename-Item env.txt .env
+Rename-Item env.example.txt .env.example
+Rename-Item README.txt README.md
+```
+
+## Важно:
+- Файл .env содержит секретные данные и НЕ должен попадать в Git
+- Файл .gitignore уже настроен для исключения .env файла
+- После переименования отредактируйте .env файл с вашими настройками
