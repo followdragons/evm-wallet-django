@@ -355,7 +355,10 @@ class TelegramWebAppLoginView(APIView):
             start_param = data.get('start_param')
 
             if not user_data or not auth_date or not received_hash:
-                return JsonResponse({'result': 'error', 'error_message': 'Missing parameters'}, status=400)
+                response = JsonResponse({'result': 'error', 'error_message': 'Missing parameters'}, status=400)
+                response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+                response['Access-Control-Allow-Credentials'] = 'true'
+                return response
 
             # Create data check string
             data_check_string = "\n".join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
@@ -373,12 +376,18 @@ class TelegramWebAppLoginView(APIView):
             # Compare the computed hash with the received hash
             if not hmac.compare_digest(computed_hash, received_hash):
                 logger.error("TelegramWebAppAuthView - Hash mismatch")
-                return JsonResponse({'result': 'error', 'error_message': 'Invalid authentication data'}, status=400)
+                response = JsonResponse({'result': 'error', 'error_message': 'Invalid authentication data'}, status=400)
+                response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+                response['Access-Control-Allow-Credentials'] = 'true'
+                return response
 
             # Check if auth_date is within 24 hours
             if time.time() - int(auth_date) > 86400:
                 logger.error("TelegramWebAppAuthView - Authentication date expired")
-                return JsonResponse({'result': 'error', 'error_message': 'Authentication date expired'}, status=400)
+                response = JsonResponse({'result': 'error', 'error_message': 'Authentication date expired'}, status=400)
+                response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+                response['Access-Control-Allow-Credentials'] = 'true'
+                return response
 
             # Decode user data from JSON
             user_data = json.loads(user_data)
@@ -386,7 +395,10 @@ class TelegramWebAppLoginView(APIView):
             username = user_data.get('username')
 
             if not telegram_id or not username:
-                return JsonResponse({'result': 'error', 'error_message': 'Missing user parameters'}, status=400)
+                response = JsonResponse({'result': 'error', 'error_message': 'Missing user parameters'}, status=400)
+                response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+                response['Access-Control-Allow-Credentials'] = 'true'
+                return response
 
             # Determine the referrer ID if present
             referred_by_id = None
@@ -406,6 +418,10 @@ class TelegramWebAppLoginView(APIView):
             jwt_token = user.get_jwt_token()
             response = JsonResponse({'result': 'success'})
             response.set_cookie('jwt_token', jwt_token['access'], httponly=True, secure=True, max_age=81000)
+            
+            # Add CORS headers
+            response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+            response['Access-Control-Allow-Credentials'] = 'true'
 
             try:
                 if created:
@@ -421,9 +437,12 @@ class TelegramWebAppLoginView(APIView):
             return response
         except Exception as e:
             logger.error(f"TelegramWebAppAuthView - An error occurred while parsing request: {str(e)}")
-            return JsonResponse({'result': 'error', 'error_message': 'Invalid request format'}, status=400)
+            response = JsonResponse({'result': 'error', 'error_message': 'Invalid request format'}, status=400)
+            response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+            response['Access-Control-Allow-Credentials'] = 'true'
+            return response
 
-def register_user_func_params(user_telegram_id: int, user_username_tg: str, referred_by_id: int):
+def register_user_func_params(user_telegram_id: int, user_username_tg: str, referred_by_id: int = None):
     try:
         with transaction.atomic():
             user, created, referred_by_telegram_id = User.objects.create_user(
