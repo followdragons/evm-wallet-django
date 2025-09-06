@@ -238,6 +238,25 @@ CORS_ALLOW_CREDENTIALS = True
 # Preflight cache time
 CORS_PREFLIGHT_MAX_AGE = 86400
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    "https://5d96fd903760.ngrok-free.app",
+    "https://telegram-mini-app-five-wheat.vercel.app",
+    "https://evm.p2e.tg",
+    "https://web.telegram.org",
+    "https://telegram.org",
+]
+
+# Allow CSRF from environment variable
+CSRF_TRUSTED_ORIGINS_ENV = config('CSRF_TRUSTED_ORIGINS', default='')
+if CSRF_TRUSTED_ORIGINS_ENV:
+    CSRF_TRUSTED_ORIGINS.extend(CSRF_TRUSTED_ORIGINS_ENV.split(','))
+
+# Disable CSRF for API endpoints (since we use JWT)
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 # Telegram Bot Configuration
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
 

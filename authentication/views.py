@@ -235,6 +235,7 @@ def register_user_func_params(user_telegram_id: int, user_username_tg: str, user
 
 
 # Telegram Web App Authentication
+@method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebAppLoginView(APIView):
     def options(self, request, *args, **kwargs):
         """Handle preflight OPTIONS requests for CORS"""
@@ -353,6 +354,7 @@ class TelegramWebAppLoginView(APIView):
 
 
 # Telegram Bot Authentication
+@method_decorator(csrf_exempt, name='dispatch')
 class TelegramLoginView(APIView):
     def get(self, request, *args, **kwargs):
         auth_date = request.GET.get('auth_date')
