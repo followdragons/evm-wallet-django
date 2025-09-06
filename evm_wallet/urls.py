@@ -25,7 +25,7 @@ urlpatterns = [
     # API endpoints
     path('api/v1/auth/', include('authentication.urls')),
     path('api/v1/wallet/', include('wallet.urls')),
-    path('api/v1/squad/', include('squad.urls')),
+    path('api/v1/chat/', include('squad.urls')),
     
     # REST Framework browsable API
     path('api-auth/', include('rest_framework.urls')),
