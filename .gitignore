@@ -132,6 +132,7 @@ dmypy.json
 media/
 staticfiles/
 static_root/
+/evm_wallet/static/
 
 # Logs
 logs/
