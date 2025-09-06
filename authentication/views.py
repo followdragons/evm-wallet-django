@@ -239,23 +239,38 @@ def register_user_func_params(user_telegram_id: int, user_username_tg: str, user
 class TelegramWebAppLoginView(APIView):
     def options(self, request, *args, **kwargs):
         """Handle preflight OPTIONS requests for CORS"""
+        origin = request.headers.get('Origin', '*')
+        logger.info(f"TelegramWebAppLoginView - OPTIONS request from origin: {origin}")
+        logger.info(f"TelegramWebAppLoginView - OPTIONS headers: {dict(request.headers)}")
+        
         response = Response()
-        response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+        response['Access-Control-Allow-Origin'] = origin
         response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         response['Access-Control-Allow-Credentials'] = 'true'
         response['Access-Control-Max-Age'] = '86400'
+        
+        logger.info(f"TelegramWebAppLoginView - OPTIONS response headers set for origin: {origin}")
         return response
 
     def get(self, request, *args, **kwargs):
+        logger.info(f"TelegramWebAppLoginView - Request started from origin: {request.headers.get('Origin', 'Unknown')}")
+        logger.info(f"TelegramWebAppLoginView - Request method: {request.method}")
+        logger.info(f"TelegramWebAppLoginView - Request headers: {dict(request.headers)}")
+        
         try:
             data = request.GET
+            logger.info(f"TelegramWebAppLoginView - GET parameters: {dict(data)}")
+            
             user_data = data.get('user')
             auth_date = data.get('auth_date')
             received_hash = data.get('hash')
             start_param = data.get('start_param')
 
+            logger.info(f"TelegramWebAppLoginView - Parsed parameters: user_data={user_data}, auth_date={auth_date}, hash={received_hash[:20] if received_hash else None}..., start_param={start_param}")
+
             if not user_data or not auth_date or not received_hash:
+                logger.error(f"TelegramWebAppLoginView - Missing required parameters: user_data={bool(user_data)}, auth_date={bool(auth_date)}, hash={bool(received_hash)}")
                 response = JsonResponse({'result': 'error', 'error_message': 'Missing parameters'}, status=400)
                 response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
                 response['Access-Control-Allow-Credentials'] = 'true'
@@ -263,41 +278,62 @@ class TelegramWebAppLoginView(APIView):
 
             # Create data check string
             data_check_string = "\n".join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
+            logger.info(f"TelegramWebAppLoginView - Data check string: {data_check_string}")
+
+            # Get bot token
+            bot_token = config('TELEGRAM_BOT_TOKEN')
+            logger.info(f"TelegramWebAppLoginView - Bot token length: {len(bot_token) if bot_token else 0}")
 
             # Compute the secret key using the bot token and the constant string "WebAppData"
             secret_key = hmac.new(
                 key="WebAppData".encode('utf-8'),
-                msg=config('TELEGRAM_BOT_TOKEN').encode('utf-8'),
+                msg=bot_token.encode('utf-8'),
                 digestmod=hashlib.sha256
             ).digest()
+            logger.info(f"TelegramWebAppLoginView - Secret key computed: {secret_key.hex()[:20]}...")
 
             # Compute the hash of the data check string using the secret key
             computed_hash = hmac.new(secret_key, data_check_string.encode('utf-8'), hashlib.sha256).hexdigest()
+            logger.info(f"TelegramWebAppLoginView - Computed hash: {computed_hash}")
+            logger.info(f"TelegramWebAppLoginView - Received hash: {received_hash}")
 
             # Compare the computed hash with the received hash
             if not hmac.compare_digest(computed_hash, received_hash):
-                logger.error("TelegramWebAppAuthView - Hash mismatch")
+                logger.error(f"TelegramWebAppLoginView - Hash mismatch! Computed: {computed_hash}, Received: {received_hash}")
                 response = JsonResponse({'result': 'error', 'error_message': 'Invalid authentication data'}, status=400)
                 response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
                 response['Access-Control-Allow-Credentials'] = 'true'
                 return response
+            
+            logger.info("TelegramWebAppLoginView - Hash verification successful")
 
             # Check if auth_date is within 24 hours
-            if time.time() - int(auth_date) > 86400:
-                logger.error("TelegramWebAppAuthView - Authentication date expired")
+            current_time = time.time()
+            auth_timestamp = int(auth_date)
+            time_diff = current_time - auth_timestamp
+            logger.info(f"TelegramWebAppLoginView - Time check: current={current_time}, auth={auth_timestamp}, diff={time_diff} seconds")
+            
+            if time_diff > 86400:
+                logger.error(f"TelegramWebAppLoginView - Authentication date expired! Time difference: {time_diff} seconds (max: 86400)")
                 response = JsonResponse({'result': 'error', 'error_message': 'Authentication date expired'}, status=400)
                 response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
                 response['Access-Control-Allow-Credentials'] = 'true'
                 return response
+            
+            logger.info("TelegramWebAppLoginView - Time verification successful")
 
             # Decode user data from JSON
+            logger.info(f"TelegramWebAppLoginView - Parsing user data JSON: {user_data}")
             user_data = json.loads(user_data)
             telegram_id = user_data.get('id')
             username = user_data.get('username')
             first_name = user_data.get('first_name')
             last_name = user_data.get('last_name')
+            
+            logger.info(f"TelegramWebAppLoginView - Parsed user data: telegram_id={telegram_id}, username={username}, first_name={first_name}, last_name={last_name}")
 
             if not telegram_id:
+                logger.error("TelegramWebAppLoginView - Missing telegram_id in user data")
                 response = JsonResponse({'result': 'error', 'error_message': 'Missing user parameters'}, status=400)
                 response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
                 response['Access-Control-Allow-Credentials'] = 'true'
@@ -307,8 +343,12 @@ class TelegramWebAppLoginView(APIView):
             referred_by_id = None
             if start_param and start_param.startswith('ref_'):
                 referred_by_id = int(start_param.split('_')[1])
+                logger.info(f"TelegramWebAppLoginView - Referral detected: start_param={start_param}, referred_by_id={referred_by_id}")
+            else:
+                logger.info(f"TelegramWebAppLoginView - No referral: start_param={start_param}")
 
             # Create or get the user
+            logger.info(f"TelegramWebAppLoginView - Attempting to create/get user with telegram_id={telegram_id}")
             user, created, referred_by_telegram_id = register_user_func_params(
                 user_telegram_id=telegram_id,
                 user_username_tg=username,
@@ -317,16 +357,22 @@ class TelegramWebAppLoginView(APIView):
                 referred_by_id=referred_by_id
             )
 
-            logger.info(f"TelegramWebAppAuthView - User {'created' if created else 'logged in'} successfully. Telegram ID: {telegram_id}")
+            logger.info(f"TelegramWebAppLoginView - User {'created' if created else 'logged in'} successfully. User ID: {user.id}, Telegram ID: {telegram_id}, Referred by: {referred_by_telegram_id}")
 
             # Generate JWT token
+            logger.info(f"TelegramWebAppLoginView - Generating JWT token for user {user.id}")
             jwt_token = user.get_jwt_token()
+            logger.info(f"TelegramWebAppLoginView - JWT token generated: {jwt_token['access'][:50]}...")
+            
             response = JsonResponse({'result': 'success'})
             response.set_cookie('jwt_token', jwt_token['access'], httponly=True, secure=True, max_age=81000)
+            logger.info("TelegramWebAppLoginView - JWT cookie set successfully")
             
             # Add CORS headers
-            response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+            origin = request.headers.get('Origin', '*')
+            response['Access-Control-Allow-Origin'] = origin
             response['Access-Control-Allow-Credentials'] = 'true'
+            logger.info(f"TelegramWebAppLoginView - CORS headers set for origin: {origin}")
 
             try:
                 if created:
@@ -340,10 +386,11 @@ class TelegramWebAppLoginView(APIView):
                     new_users = cache.get('new_users', [])
                     new_users.append(new_user)
                     cache.set('new_users', new_users, timeout=60*5)
-                    print(new_users)
+                    logger.info(f"TelegramWebAppLoginView - New user added to cache: {new_user}")
             except Exception as e:
-                pass
+                logger.error(f"TelegramWebAppLoginView - Error adding user to cache: {str(e)}")
 
+            logger.info(f"TelegramWebAppLoginView - Request completed successfully for user {telegram_id}")
             return response
         except Exception as e:
             logger.error(f"TelegramWebAppAuthView - An error occurred while parsing request: {str(e)}")
