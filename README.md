@@ -1,117 +1,108 @@
 # EVM Wallet Django Project
 
-## Описание проекта
-Django проект для EVM-совместимого кошелька с функциональностью сквадов (команд).
+## Project Description
+Django project for EVM-compatible wallet with squad (team) functionality.
 
-## Основные функции
-- Кастомная аутентификация через Telegram Mini App и бот
-- Поддержка EVM-совместимых блокчейнов (Ethereum, Base)
-- Система сквадов (команд) для групповых операций
-- Управление токенами и балансами
-- API для интеграции с фронтендом
+## Key Features
+- Custom authentication via Telegram Mini App and bot
+- Support for EVM-compatible blockchains (Ethereum, Base)
+- Squad (team) system for group operations
+- Token and balance management
+- API for frontend integration
 
-## Установка и настройка
+## Installation and Setup
 
-### 1. Клонирование и настройка окружения
+### 1. Cloning and Environment Setup
 ```bash
-# Активация виртуального окружения
+# Activate virtual environment
 .\venv\Scripts\Activate.ps1
 
-# Установка зависимостей
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Настройка переменных окружения
+### 2. Environment Variables Configuration
 ```bash
-# Переименуйте файлы:
+# Rename files:
 # env.txt -> .env
 # gitignore.txt -> .gitignore
 # env.example.txt -> .env.example
 # README.txt -> README.md
 
-# Отредактируйте .env файл с вашими настройками
+# Edit .env file with your settings
 ```
 
-### 3. Настройка базы данных
+### 3. Database Setup
 ```bash
-# Применение миграций
+# Apply migrations
 python manage.py migrate
 
-# Создание суперпользователя
+# Create superuser
 python manage.py createsuperuser --telegram_id YOUR_TELEGRAM_ID
 ```
 
-### 4. Запуск сервера разработки
+### 4. Run Development Server
 ```bash
 python manage.py runserver
 ```
 
-## Структура проекта
+## Project Structure
 
-### Приложения Django:
-- **authentication** - Кастомная аутентификация через Telegram
-- **wallet** - Управление кошельками и токенами
-- **squad** - Система сквадов (команд)
+### Django Apps:
+- **authentication** - Custom Telegram authentication
+- **wallet** - Wallet and token management
+- **squad** - Squad (team) system
 
-### Основные модели:
-- **User** - Пользователи с Telegram интеграцией
-- **EVMChain** - Поддерживаемые блокчейны
-- **Token** - Токены на различных блокчейнах
-- **Wallet** - Кошельки пользователей
-- **Squad** - Сквады (команды)
-- **SquadWallet** - Кошельки сквадов
+### Main Models:
+- **User** - Users with Telegram integration
+- **EVMChain** - Supported blockchains
+- **Token** - Tokens on various blockchains
+- **Wallet** - User wallets
+- **Squad** - Squads (teams)
+- **SquadWallet** - Squad wallets
 
 ## API Endpoints
 
-### Аутентификация
-- `POST /api/v1/auth/telegram/login/` - Вход через Telegram
-- `POST /api/v1/auth/telegram/webapp/` - Вход через Telegram Web App
-- `POST /api/v1/auth/logout/` - Выход
+### Authentication
+- `POST /api/v1/auth/telegram/login/` - Login via Telegram
+- `POST /api/v1/auth/telegram/webapp/` - Login via Telegram Web App
+- `POST /api/v1/auth/logout/` - Logout
 
-### Кошельки
-- `GET /api/v1/wallet/chains/` - Список поддерживаемых блокчейнов
-- `GET /api/v1/wallet/tokens/` - Список токенов
-- `GET /api/v1/wallet/wallets/` - Кошельки пользователя
-- `POST /api/v1/wallet/wallets/create/` - Создание кошелька
+### Wallets
+- `GET /api/v1/wallet/chains/` - List supported blockchains
+- `GET /api/v1/wallet/tokens/` - List tokens
+- `GET /api/v1/wallet/wallets/` - User wallets
+- `POST /api/v1/wallet/wallets/create/` - Create wallet
 
-### Сквады
-- `GET /api/v1/squad/squads/` - Список сквадов
-- `POST /api/v1/squad/squads/create/` - Создание сквада
-- `POST /api/v1/squad/squads/{id}/join/` - Присоединение к скваду
-- `POST /api/v1/squad/squads/{id}/leave/` - Покидание сквада
+### Squads
+- `GET /api/v1/squad/squads/` - List squads
+- `POST /api/v1/squad/squads/create/` - Create squad
+- `POST /api/v1/squad/squads/{id}/join/` - Join squad
+- `POST /api/v1/squad/squads/{id}/leave/` - Leave squad
 
-## Настройка Telegram бота
+## Telegram Bot Setup
 
-1. Создайте бота через @BotFather
-2. Получите токен бота
-3. Добавьте токен в .env файл
-4. Настройте webhook для получения обновлений
+1. Create bot via @BotFather
+2. Get bot token
+3. Add token to .env file
+4. Configure webhook for receiving updates
 
-## Настройка EVM блокчейнов
+## EVM Blockchain Setup
 
-1. Получите API ключи от провайдеров RPC (Infura, Alchemy)
-2. Добавьте URL в .env файл
-3. Настройте поддерживаемые токены в админке Django
+1. Get API keys from RPC providers (Infura, Alchemy)
+2. Add URLs to .env file
+3. Configure supported tokens in Django admin
 
-## Разработка
+## Development
 
-### Добавление новых токенов:
-1. Зайдите в админку Django
-2. Добавьте новый токен в разделе "Tokens"
-3. Укажите адрес контракта и параметры
+### Adding New Tokens:
+1. Go to Django admin
+2. Add new token in "Tokens" section
+3. Specify contract address and parameters
 
-### Создание новых сквадов:
-1. Используйте API endpoint для создания сквада
-2. Настройте параметры сквада (максимум участников, публичность)
-3. Управляйте участниками через API
+### Creating New Squads:
+1. Use API endpoint to create squad
+2. Configure squad parameters (max members, publicity)
+3. Manage members via API
 
-## Безопасность
-
-- Никогда не коммитьте .env файл в репозиторий
-- Используйте сильные пароли для production
-- Настройте HTTPS для production
-- Регулярно обновляйте зависимости
-
-## Поддержка
-
-Для вопросов и предложений создавайте issues в репозитории.
+For questions and suggestions, create issues in the repository.

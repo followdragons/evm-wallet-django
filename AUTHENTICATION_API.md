@@ -1,45 +1,45 @@
-# API Аутентификации для EVM Wallet
+# Authentication API for EVM Wallet
 
-## Обзор
+## Overview
 
-Система аутентификации поддерживает:
-- **Telegram Bot** - аутентификация через Telegram бота
-- **Telegram WebApp** - аутентификация через Telegram Web App
-- **JWT токены** - для API доступа
-- **EVM адреса** - привязка Ethereum и Base адресов
+The authentication system supports:
+- **Telegram Bot** - authentication via Telegram bot
+- **Telegram WebApp** - authentication via Telegram Web App
+- **JWT tokens** - for API access
+- **EVM addresses** - binding Ethereum and Base addresses
 
 ## Endpoints
 
 ### 1. Telegram Bot Authentication
 
 #### `GET /api/v1/auth/telegram/login/`
-Аутентификация через Telegram бота.
+Authentication via Telegram bot.
 
-**Параметры (GET):**
-- `id` - Telegram ID пользователя
-- `first_name` - Имя пользователя
-- `last_name` - Фамилия пользователя
-- `username` - Username в Telegram
-- `photo_url` - URL аватара
-- `auth_date` - Дата аутентификации
-- `hash` - Хеш для проверки
+**Parameters (GET):**
+- `id` - User's Telegram ID
+- `first_name` - User's first name
+- `last_name` - User's last name
+- `username` - Telegram username
+- `photo_url` - Avatar URL
+- `auth_date` - Authentication date
+- `hash` - Hash for verification
 
-**Ответ:**
-- Успех: редирект на `/api/v1/wallet/` с JWT токеном в cookies
-- Ошибка: JSON с описанием ошибки
+**Response:**
+- Success: redirect to `/api/v1/wallet/` with JWT token in cookies
+- Error: JSON with error description
 
 ### 2. Telegram WebApp Authentication
 
 #### `GET /api/v1/auth/telegram/webapp/`
-Аутентификация через Telegram Web App.
+Authentication via Telegram Web App.
 
-**Параметры (GET):**
-- `user` - JSON с данными пользователя
-- `auth_date` - Дата аутентификации
-- `hash` - Хеш для проверки
-- `start_param` - Параметр запуска (для рефералов)
+**Parameters (GET):**
+- `user` - JSON with user data
+- `auth_date` - Authentication date
+- `hash` - Hash for verification
+- `start_param` - Start parameter (for referrals)
 
-**Ответ:**
+**Response:**
 ```json
 {
     "result": "success"
@@ -49,25 +49,24 @@
 ### 3. User Registration
 
 #### `POST /api/v1/auth/register/`
-Регистрация пользователя (требует Full Permissions API).
+User registration via API.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
+Content-Type: application/json
 ```
 
-**Тело запроса:**
+**Request Body:**
 ```json
 {
     "telegram_id": 123456789,
     "username_tg": "username",
-    "first_name": "Имя",
-    "last_name": "Фамилия",
     "referred_by_id": 987654321
 }
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "result": "success",
@@ -77,24 +76,22 @@ Authorization: Bearer <jwt_token>
             "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
             "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
         },
-        "beta": false,
-        "alpha": false,
         "referred_by_telegram_id": 987654321
     }
 }
 ```
 
-### 4. Check Authentication
+### 4. Authentication Check
 
 #### `GET /api/v1/auth/check/`
-Проверка аутентификации (требует Beta Access).
+Check user authentication status.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "result": "success",
@@ -106,74 +103,96 @@ Authorization: Bearer <jwt_token>
 ### 5. User Profile
 
 #### `GET /api/v1/auth/profile/`
-Получение профиля пользователя (требует Beta Access).
+Get user profile information.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
+    "id": 1,
     "telegram_id": 123456789,
     "username_tg": "username",
-    "first_name": "Имя",
-    "last_name": "Фамилия",
-    "ethereum_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "base_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "first_name": "John",
+    "last_name": "Doe",
+    "is_active": true,
+    "is_staff": false,
     "has_beta_access": true,
     "has_alpha_access": false,
     "is_bot_suspected": false,
+    "ethereum_address": "0x...",
+    "base_address": "0x...",
     "date_joined": "2025-01-05T21:00:00Z",
     "last_login": "2025-01-05T21:30:00Z"
+}
+```
+
+#### `PUT /api/v1/auth/profile/`
+Update user profile.
+
+**Headers:**
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+    "first_name": "John",
+    "last_name": "Doe"
 }
 ```
 
 ### 6. EVM Address Management
 
 #### `POST /api/v1/auth/address/`
-Добавление EVM адреса к пользователю (требует Beta Access).
+Add EVM addresses to user account.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
+Content-Type: application/json
 ```
 
-**Тело запроса:**
+**Request Body:**
 ```json
 {
-    "chain": "ethereum",
-    "address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
+    "ethereum_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "base_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
 }
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "result": "success",
-    "message": "Ethereum address added successfully"
+    "message": "Addresses added successfully"
 }
 ```
 
 ### 7. User Cooldowns
 
 #### `GET /api/v1/auth/cooldowns/`
-Получение кулдаунов пользователя (требует Beta Access).
+Get active cooldowns for user.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
-    "cooldowns": [
+    "result": "success",
+    "data": [
         {
-            "action": "transfer",
-            "cooldown_until": "2025-01-05T22:00:00Z",
-            "is_active": true
+            "command": "claim",
+            "cooldown_timestamp": "2025-01-05T21:00:00Z",
+            "remaining_seconds": 3600
         }
     ]
 }
@@ -182,29 +201,34 @@ Authorization: Bearer <jwt_token>
 ### 8. Logout
 
 #### `POST /api/v1/auth/logout/`
-Выход из системы (требует Beta Access).
+User logout.
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
-- Редирект на `/api/v1/auth/`
+**Response:**
+```json
+{
+    "result": "success",
+    "message": "Logged out successfully"
+}
+```
 
 ## Admin Endpoints
 
 ### 9. List Users
 
 #### `GET /api/v1/auth/admin/users/`
-Получение списка всех пользователей (требует Admin Access).
+Get list of all users (requires Admin Access).
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "users": [
@@ -212,8 +236,8 @@ Authorization: Bearer <jwt_token>
             "id": 1,
             "telegram_id": 123456789,
             "username_tg": "username",
-            "first_name": "Имя",
-            "last_name": "Фамилия",
+            "first_name": "John",
+            "last_name": "Doe",
             "is_active": true,
             "is_staff": false,
             "has_beta_access": true,
@@ -229,28 +253,28 @@ Authorization: Bearer <jwt_token>
 ### 10. User Details
 
 #### `GET /api/v1/auth/admin/users/{user_id}/`
-Получение детальной информации о пользователе (требует Admin Access).
+Get detailed user information (requires Admin Access).
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "id": 1,
     "telegram_id": 123456789,
     "username_tg": "username",
-    "first_name": "Имя",
-    "last_name": "Фамилия",
-    "ethereum_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-    "base_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+    "first_name": "John",
+    "last_name": "Doe",
     "is_active": true,
     "is_staff": false,
     "has_beta_access": true,
     "has_alpha_access": false,
     "is_bot_suspected": false,
+    "ethereum_address": "0x...",
+    "base_address": "0x...",
     "date_joined": "2025-01-05T21:00:00Z",
     "last_login": "2025-01-05T21:30:00Z"
 }
@@ -259,14 +283,14 @@ Authorization: Bearer <jwt_token>
 ### 11. New Users
 
 #### `GET /api/v1/auth/admin/new-users/`
-Получение новых пользователей из кэша (требует Admin Access).
+Get new users from cache (requires Admin Access).
 
-**Заголовки:**
+**Headers:**
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "result": "success",
@@ -284,21 +308,21 @@ Authorization: Bearer <jwt_token>
 ### 12. Generate JWT Tokens for Any User (No Auth Required)
 
 #### `POST /api/v1/auth/admin/tokens/`
-Генерация JWT токенов для любого пользователя (без аутентификации - для разработки/тестирования).
+Generate JWT tokens for any user (no authentication - for development/testing).
 
-**Заголовки:**
+**Headers:**
 ```
 Content-Type: application/json
 ```
 
-**Тело запроса:**
+**Request Body:**
 ```json
 {
     "telegram_id": 123456789
 }
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
     "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -315,50 +339,50 @@ Content-Type: application/json
 }
 ```
 
-**Примечание:** Этот endpoint позволяет генерировать JWT токены для любого пользователя в системе без аутентификации. Полезно для отладки, тестирования или предоставления поддержки. **ВНИМАНИЕ:** В продакшене этот endpoint должен быть закомментирован или защищен аутентификацией!
+**Note:** This endpoint allows generating JWT tokens for any user in the system without authentication. Useful for debugging, testing, or providing support. **WARNING:** In production, this endpoint should be commented out or protected with authentication!
 
-## Уровни доступа
+## Access Levels
 
 ### 1. Full Permissions API
-- Доступ ко всем API endpoints
-- Может регистрировать пользователей
-- Доступ к админ функциям
+- Access to all API endpoints
+- Can register users
+- Access to admin functions
 
 ### 2. Admin Access
-- Доступ к админ панели
-- Просмотр всех пользователей
-- Управление пользователями
+- Access to admin panel
+- View all users
+- Manage users
 
 ### 3. Beta Access
-- Доступ к основным функциям
-- Управление профилем
-- Работа с кошельками
+- Access to main functions
+- Profile management
+- Wallet operations
 
 ### 4. Alpha Access
-- Доступ к экспериментальным функциям
-- Ранний доступ к новым возможностям
+- Access to experimental features
+- Early access to new capabilities
 
 ## JWT Token
 
-JWT токены содержат:
-- `user_id` - ID пользователя
+JWT tokens contain:
+- `user_id` - User ID
 - `telegram_id` - Telegram ID
-- `exp` - Время истечения
-- `iat` - Время создания
+- `exp` - Expiration time
+- `iat` - Issued at time
 
-**Время жизни:**
- нужн- Access Token: 100 лет (36525 дней)
-- Refresh Token: 100 лет (36525 дней)
+**Lifetime:**
+- Access Token: 100 years (36525 days)
+- Refresh Token: 100 years (36525 days)
 
-## Безопасность
+## Security
 
-1. **Хеш проверка** - все Telegram запросы проверяются через HMAC-SHA256
-2. **Время жизни** - auth_date не должен быть старше 24 часов
-3. **Bot detection** - автоматическое обнаружение ботов
-4. **JWT токены** - безопасная аутентификация для API
-5. **Уровни доступа** - гранулярные права доступа
+1. **Hash verification** - all Telegram requests are verified via HMAC-SHA256
+2. **Lifetime** - auth_date should not be older than 24 hours
+3. **Bot detection** - automatic bot detection
+4. **JWT tokens** - secure authentication for API
+5. **Access levels** - granular access permissions
 
-## Ошибки
+## Errors
 
 ### 400 Bad Request
 ```json

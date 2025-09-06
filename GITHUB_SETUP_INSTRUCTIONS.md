@@ -1,50 +1,50 @@
-# Инструкции по настройке GitHub репозитория
+# GitHub Repository Setup Instructions
 
-### 1. Создать репозиторий на GitHub
-1. Перейдите на https://github.com
-2. Войдите в свой аккаунт
-3. Нажмите кнопку "New" или "+" → "New repository"
-4. Заполните данные:
+### 1. Create Repository on GitHub
+1. Go to https://github.com
+2. Log in to your account
+3. Click "New" or "+" → "New repository"
+4. Fill in the details:
    - **Repository name**: `evm-wallet-django`
    - **Description**: `Django EVM Wallet with Squad Mechanics`
-   - **Visibility**: Public или Private (на ваш выбор)
-   - **НЕ** добавляйте README, .gitignore или лицензию (они уже есть)
-5. Нажмите "Create repository"
+   - **Visibility**: Public or Private (your choice)
+   - **DO NOT** add README, .gitignore or license (they already exist)
+5. Click "Create repository"
 
-### 2. Подключить локальный репозиторий к GitHub
-После создания репозитория GitHub покажет команды. Выполните их:
+### 2. Connect Local Repository to GitHub
+After creating the repository, GitHub will show commands. Execute them:
 
 ```bash
-# Добавить удаленный репозиторий (замените YOUR_USERNAME на ваш GitHub username)
+# Add remote repository (replace YOUR_USERNAME with your GitHub username)
 git remote add origin https://github.com/YOUR_USERNAME/evm-wallet-django.git
 
-# Переименовать ветку в main (современный стандарт)
+# Rename branch to main (modern standard)
 git branch -M main
 
-# Отправить код на GitHub
+# Push code to GitHub
 git push -u origin main
 ```
 
-### 3. Альтернативный способ (если у вас есть SSH ключи)
+### 3. Alternative Method (if you have SSH keys)
 ```bash
-# Для SSH (если настроены ключи)
+# For SSH (if keys are configured)
 git remote add origin git@github.com:YOUR_USERNAME/evm-wallet-django.git
 git branch -M main
 git push -u origin main
 ```
 
-## 🔧 Дополнительные настройки
+## 🔧 Additional Settings
 
-### Настройка ветки по умолчанию
-После первого push GitHub может предложить изменить ветку по умолчанию с `master` на `main`. Согласитесь.
+### Default Branch Setup
+After the first push, GitHub may suggest changing the default branch from `master` to `main`. Agree to this.
 
-### Настройка защиты ветки (опционально)
-1. Перейдите в Settings → Branches
-2. Добавьте правило для ветки `main`
-3. Включите "Require pull request reviews before merging"
+### Branch Protection Setup (optional)
+1. Go to Settings → Branches
+2. Add rule for `main` branch
+3. Enable "Require pull request reviews before merging"
 
-## 📁 Структура репозитория
-После push ваш репозиторий будет содержать:
+## 📁 Repository Structure
+After push, your repository will contain:
 ```
 evm-wallet-django/
 ├── .gitignore
@@ -58,8 +58,8 @@ evm-wallet-django/
 └── ...
 ```
 
-## 🚀 После настройки
-1. Клонируйте репозиторий на других машинах: `git clone https://github.com/YOUR_USERNAME/evm-wallet-django.git`
-2. Создайте файл `.env` из `.env.example`
-3. Установите зависимости: `pip install -r requirements.txt`
-4. Примените миграции: `python manage.py migrate`
+## 🚀 After Setup
+1. Clone repository on other machines: `git clone https://github.com/YOUR_USERNAME/evm-wallet-django.git`
+2. Create `.env` file from `.env.example`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Apply migrations: `python manage.py migrate`
