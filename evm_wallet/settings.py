@@ -192,6 +192,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://evm.p2e.tg",
     "http://evm.p2e.tg",
     "https://telegram-mini-app-five-wheat.vercel.app",
+    "https://5d96fd903760.ngrok-free.app",
 ]
 
 # Allow CORS from environment variable
@@ -206,6 +207,8 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.github\.io$",
     r"^https://.*\.telegram\.org$",
     r"^https://web\.telegram\.org$",
+    r"^https://.*\.ngrok-free\.app$",
+    r"^https://.*\.ngrok\.io$",
 ]
 
 CORS_ALLOWED_HEADERS = [
