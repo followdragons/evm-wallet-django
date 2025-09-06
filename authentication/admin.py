@@ -9,6 +9,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'date_joined')
     search_fields = ('id', 'telegram_id', 'username_tg', 'first_name', 'last_name')
     ordering = ('id',)
+    readonly_fields = ('id', 'date_joined', 'last_login')
     
     fieldsets = (
         (None, {'fields': ('id', 'telegram_id', 'password')}),
