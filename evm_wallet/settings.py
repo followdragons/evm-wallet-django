@@ -181,12 +181,17 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
+CORS_ALLOW_ALL_ORIGINS = False  # Keep this False for security
+
+# Allow specific origins for development and production
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://web.telegram.org",
+    "https://telegram.org",
     "https://evm.p2e.tg",
     "http://evm.p2e.tg",
+    "https://telegram-mini-app-five-wheat.vercel.app",
 ]
 
 # Allow CORS from environment variable
@@ -194,10 +199,15 @@ CORS_ALLOWED_ORIGINS_ENV = config('CORS_ALLOWED_ORIGINS', default='')
 if CORS_ALLOWED_ORIGINS_ENV:
     CORS_ALLOWED_ORIGINS.extend(CORS_ALLOWED_ORIGINS_ENV.split(','))
 
-CORS_ALLOW_CREDENTIALS = True
+# Allow all Telegram Web App origins (for development)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.netlify\.app$",
+    r"^https://.*\.github\.io$",
+    r"^https://.*\.telegram\.org$",
+    r"^https://web\.telegram\.org$",
+]
 
-# Additional CORS settings for production
-CORS_ALLOW_ALL_ORIGINS = False  # Keep this False for security
 CORS_ALLOWED_HEADERS = [
     'accept',
     'accept-encoding',
@@ -209,6 +219,7 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
 CORS_ALLOWED_METHODS = [
     'DELETE',
     'GET',
@@ -217,6 +228,12 @@ CORS_ALLOWED_METHODS = [
     'POST',
     'PUT',
 ]
+
+# Allow credentials for JWT cookies
+CORS_ALLOW_CREDENTIALS = True
+
+# Preflight cache time
+CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Telegram Bot Configuration
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
