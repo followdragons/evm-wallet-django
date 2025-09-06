@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class UserManager(BaseUserManager):
     def create_user(self, telegram_id, username_tg=None, first_name=None, last_name=None, 
-                   referred_by_id=None, **extra_fields):
+                   referred_by_id=None, password=None, **extra_fields):
         """
         Create and return a regular user with the given telegram_id and username_tg.
         """
@@ -52,7 +52,13 @@ class UserManager(BaseUserManager):
                 user.last_name = last_name
             user.save()
         
-        user.set_unusable_password()
+        # Set password if provided, otherwise set unusable password
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save()
+        
         return user, created, referred_by.telegram_id if referred_by else None
 
     def create_superuser(self, telegram_id, username_tg=None, password=None, **extra_fields):
@@ -70,7 +76,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
 
-        user, created, _ = self.create_user(telegram_id, username_tg, **extra_fields)
+        user, created, _ = self.create_user(telegram_id, username_tg, password=password, **extra_fields)
         return user
 
     def add_ethereum_address(self, user, address):
