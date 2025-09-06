@@ -16,6 +16,7 @@ urlpatterns = [
     path('profile/', views.UserProfileView.as_view(), name='user_profile'),
     path('address/', views.EVMAddressView.as_view(), name='evm_address'),
     path('wallet/register/', views.EVMWalletRegistrationView.as_view(), name='evm_wallet_register'),
+    path('networks/', views.SupportedNetworksView.as_view(), name='supported_networks'),
     path('cooldowns/', views.UserCooldownView.as_view(), name='user_cooldowns'),
     
     # Admin endpoints

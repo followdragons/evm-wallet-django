@@ -27,6 +27,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from decouple import config
 
 from .models import User, UserProfile, UserCooldown
+from wallet.models import EVMChain
 
 logger = logging.getLogger(__name__)
 
@@ -558,11 +559,15 @@ class EVMWalletRegistrationView(APIView):
                     'error_message': 'Chain and address are required'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Validate chain
-            if chain not in ['ethereum', 'base']:
+            # Validate chain - get from database
+            try:
+                evm_chain = EVMChain.objects.get(name__iexact=chain, is_active=True)
+            except EVMChain.DoesNotExist:
+                # Get list of supported chains for error message
+                supported_chains = list(EVMChain.objects.filter(is_active=True).values_list('name', flat=True))
                 return Response({
                     'result': 'error', 
-                    'error_message': 'Invalid chain. Supported chains: ethereum, base'
+                    'error_message': f'Invalid or inactive chain. Supported chains: {", ".join(supported_chains)}'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # Validate address format
@@ -574,9 +579,9 @@ class EVMWalletRegistrationView(APIView):
 
             # Check if address already belongs to another user
             existing_user = None
-            if chain == 'ethereum':
+            if evm_chain.name.lower() == 'ethereum':
                 existing_user = User.objects.filter(ethereum_address=address).exclude(id=user.id).first()
-            elif chain == 'base':
+            elif evm_chain.name.lower() == 'base':
                 existing_user = User.objects.filter(base_address=address).exclude(id=user.id).first()
 
             if existing_user:
@@ -585,12 +590,12 @@ class EVMWalletRegistrationView(APIView):
                     'error_message': 'This address is already registered to another user'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Update user's address
+            # Update user's address based on chain
             old_address = None
-            if chain == 'ethereum':
+            if evm_chain.name.lower() == 'ethereum':
                 old_address = user.ethereum_address
                 user.ethereum_address = address
-            elif chain == 'base':
+            elif evm_chain.name.lower() == 'base':
                 old_address = user.base_address
                 user.base_address = address
 
@@ -599,13 +604,20 @@ class EVMWalletRegistrationView(APIView):
             # Prepare response
             response_data = {
                 'result': 'success',
-                'message': f'{chain.title()} wallet address {"updated" if old_address else "registered"} successfully',
+                'message': f'{evm_chain.name} wallet address {"updated" if old_address else "registered"} successfully',
                 'data': {
-                    'chain': chain,
+                    'chain': evm_chain.name,
+                    'chain_id': evm_chain.chain_id,
                     'address': address,
                     'old_address': old_address,
                     'user_id': user.id,
-                    'telegram_id': user.telegram_id
+                    'telegram_id': user.telegram_id,
+                    'chain_info': {
+                        'name': evm_chain.name,
+                        'chain_id': evm_chain.chain_id,
+                        'native_currency': evm_chain.native_currency_symbol,
+                        'is_testnet': evm_chain.is_testnet
+                    }
                 }
             }
 
@@ -643,6 +655,52 @@ class EVMWalletRegistrationView(APIView):
 
         except Exception as e:
             logger.error(f"EVMWalletRegistrationView GET - An error occurred: {str(e)}")
+            return Response({
+                'result': 'error', 
+                'error_message': 'Internal server error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Supported Networks
+class SupportedNetworksView(APIView):
+    """
+    API endpoint to get list of supported EVM networks.
+    """
+    authentication_classes = [BetaAccessJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Get list of supported EVM networks.
+        """
+        try:
+            networks = EVMChain.objects.filter(is_active=True).order_by('chain_id')
+            
+            networks_data = []
+            for network in networks:
+                networks_data.append({
+                    'name': network.name,
+                    'chain_id': network.chain_id,
+                    'native_currency_symbol': network.native_currency_symbol,
+                    'native_currency_name': network.native_currency_name,
+                    'is_testnet': network.is_testnet,
+                    'block_time_seconds': network.block_time_seconds,
+                    'gas_price_gwei': float(network.gas_price_gwei),
+                    'explorer_url': network.explorer_url
+                })
+            
+            response_data = {
+                'result': 'success',
+                'data': {
+                    'networks': networks_data,
+                    'total_count': len(networks_data)
+                }
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"SupportedNetworksView - An error occurred: {str(e)}")
             return Response({
                 'result': 'error', 
                 'error_message': 'Internal server error'
