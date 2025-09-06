@@ -265,9 +265,10 @@ class TelegramWebAppLoginView(APIView):
             user_data = data.get('user')
             auth_date = data.get('auth_date')
             received_hash = data.get('hash')
+            signature = data.get('signature')
             start_param = data.get('start_param')
 
-            logger.info(f"TelegramWebAppLoginView - Parsed parameters: user_data={user_data}, auth_date={auth_date}, hash={received_hash[:20] if received_hash else None}..., start_param={start_param}")
+            logger.info(f"TelegramWebAppLoginView - Parsed parameters: user_data={user_data}, auth_date={auth_date}, hash={received_hash[:20] if received_hash else None}..., signature={signature[:20] if signature else None}..., start_param={start_param}")
 
             if not user_data or not auth_date or not received_hash:
                 logger.error(f"TelegramWebAppLoginView - Missing required parameters: user_data={bool(user_data)}, auth_date={bool(auth_date)}, hash={bool(received_hash)}")
@@ -276,8 +277,8 @@ class TelegramWebAppLoginView(APIView):
                 response['Access-Control-Allow-Credentials'] = 'true'
                 return response
 
-            # Create data check string
-            data_check_string = "\n".join([f"{key}={value}" for key, value in sorted(data.items()) if key != 'hash'])
+            # Create data check string - exclude both 'hash' and 'signature' parameters
+            data_check_string = "\n".join([f"{key}={value}" for key, value in sorted(data.items()) if key not in ['hash', 'signature']])
             logger.info(f"TelegramWebAppLoginView - Data check string: {data_check_string}")
 
             # Get bot token
@@ -332,8 +333,8 @@ class TelegramWebAppLoginView(APIView):
             
             logger.info(f"TelegramWebAppLoginView - Parsed user data: telegram_id={telegram_id}, username={username}, first_name={first_name}, last_name={last_name}")
 
-            if not telegram_id:
-                logger.error("TelegramWebAppLoginView - Missing telegram_id in user data")
+            if not telegram_id or not username:
+                logger.error(f"TelegramWebAppLoginView - Missing user parameters: telegram_id={bool(telegram_id)}, username={bool(username)}")
                 response = JsonResponse({'result': 'error', 'error_message': 'Missing user parameters'}, status=400)
                 response['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
                 response['Access-Control-Allow-Credentials'] = 'true'
