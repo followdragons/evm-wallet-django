@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import traceback
+import re
 from datetime import timedelta
 from decimal import Decimal
 
@@ -28,6 +29,21 @@ from decouple import config
 from .models import User, UserProfile, UserCooldown
 
 logger = logging.getLogger(__name__)
+
+
+# Utility Functions
+def validate_evm_address(address):
+    """
+    Validate EVM address format (Ethereum, Base, etc.)
+    """
+    if not address:
+        return False
+    
+    # Check if address starts with 0x and is 42 characters long
+    if not re.match(r'^0x[a-fA-F0-9]{40}$', address):
+        return False
+    
+    return True
 
 
 # Custom JWT Authentication Classes
@@ -509,6 +525,128 @@ class EVMAddressView(APIView):
             logger.error(f"EVMAddressView - An error occurred: {str(e)}")
             return Response({'result': 'error', 'error_message': str(e)}, 
                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# EVM Wallet Registration
+class EVMWalletRegistrationView(APIView):
+    """
+    API endpoint for users to register their EVM wallet address.
+    Users can register or update their wallet address using JWT authentication.
+    """
+    authentication_classes = [BetaAccessJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Register or update EVM wallet address for authenticated user.
+        
+        Expected payload:
+        {
+            "chain": "ethereum" | "base",
+            "address": "0x..."
+        }
+        """
+        try:
+            user = request.user
+            chain = request.data.get('chain')
+            address = request.data.get('address')
+
+            # Validate required fields
+            if not chain or not address:
+                return Response({
+                    'result': 'error', 
+                    'error_message': 'Chain and address are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate chain
+            if chain not in ['ethereum', 'base']:
+                return Response({
+                    'result': 'error', 
+                    'error_message': 'Invalid chain. Supported chains: ethereum, base'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate address format
+            if not validate_evm_address(address):
+                return Response({
+                    'result': 'error', 
+                    'error_message': 'Invalid EVM address format'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if address already belongs to another user
+            existing_user = None
+            if chain == 'ethereum':
+                existing_user = User.objects.filter(ethereum_address=address).exclude(id=user.id).first()
+            elif chain == 'base':
+                existing_user = User.objects.filter(base_address=address).exclude(id=user.id).first()
+
+            if existing_user:
+                return Response({
+                    'result': 'error', 
+                    'error_message': 'This address is already registered to another user'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update user's address
+            old_address = None
+            if chain == 'ethereum':
+                old_address = user.ethereum_address
+                user.ethereum_address = address
+            elif chain == 'base':
+                old_address = user.base_address
+                user.base_address = address
+
+            user.save()
+
+            # Prepare response
+            response_data = {
+                'result': 'success',
+                'message': f'{chain.title()} wallet address {"updated" if old_address else "registered"} successfully',
+                'data': {
+                    'chain': chain,
+                    'address': address,
+                    'old_address': old_address,
+                    'user_id': user.id,
+                    'telegram_id': user.telegram_id
+                }
+            }
+
+            logger.info(f"EVMWalletRegistrationView - User {user.telegram_id} {'updated' if old_address else 'registered'} {chain} address: {address}")
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"EVMWalletRegistrationView - An error occurred: {str(e)}")
+            return Response({
+                'result': 'error', 
+                'error_message': 'Internal server error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request):
+        """
+        Get current wallet addresses for authenticated user.
+        """
+        try:
+            user = request.user
+            
+            response_data = {
+                'result': 'success',
+                'data': {
+                    'user_id': user.id,
+                    'telegram_id': user.telegram_id,
+                    'ethereum_address': user.ethereum_address,
+                    'base_address': user.base_address,
+                    'has_ethereum': bool(user.ethereum_address),
+                    'has_base': bool(user.base_address)
+                }
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"EVMWalletRegistrationView GET - An error occurred: {str(e)}")
+            return Response({
+                'result': 'error', 
+                'error_message': 'Internal server error'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # User Cooldowns
